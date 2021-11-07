@@ -1,0 +1,11 @@
+Type,Ranking,Control,Average_fee,Average_faculty_salary
+Undergrad_Masters,Tier C,Private,20000,65000
+Undergrad_Masters,Tier B,Private,30000,80000
+Undergrad_Masters,Tier C,Private,18000,70000
+Undergrad_Masters,Tier B,Private,30000,90000
+Undergrad_Masters,Tier A,Public,46000,116000
+Undergrad only,Tier A,Public,45000,115000
+Undergrad only,Tier A,Private,40000,130000
+Undergrad only,Tier B,Public,33000,100000
+Undergrad only,Tier B,Private,34000,110000
+Undergrad only,Tier C,Private,21000,95000
