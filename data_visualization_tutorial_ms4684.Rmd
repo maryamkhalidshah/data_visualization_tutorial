@@ -1,0 +1,697 @@
+---
+title: "Data Visualization Tutorial"
+author: "Maryam Khalid Shah"
+date: "11/2/2021"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+$~$
+
+[`rcdimple`](https://rdocumentation.org/packages/rcdimple/versions/0.1) is the htmlwidget version of the [dimple](http://dimplejs.org/) piece in [rCharts](https://ramnathv.github.io/rCharts/), an R package which uses a lattice style plotting interface to "create, customize and publish interactive javascript visualizations from R."
+
+There are several advantages of using `rcdimple` to create charts in R:
+
+* Can create customizable d3.js charts in R with minimal code, and no knowledge of Javascript.
+* Aesthetically pleasing charts.
+* Easy installation, and can view a demo of dimple charts.
+* Works nicely with pipes - this is a major advantage since piped code is much more readable and easier to follow.
+* Can create interactive charts.
+* Can also add animations to interactive charts. 
+* Can use d3 color scales, or color palettes from R packages such as RColorBrewer. 
+
+`rcdimple` does come with a few disadvantages however:
+
+* The default font is too small, and the plot title is not centered by default.
+* It is a bit tricky to adjust the position of the legend.
+* The font of the plot looks different in the knitted markdown html file versus in a .rmd file.
+
+Despite these drawbacks (which we will learn how to address), `rcdimple` is worth exploring. To get started, it is easy to install using devtools::install_github.
+
+```{r install and load package, eval = TRUE, results = 'hide', message = FALSE}
+# installation
+devtools::install_github("timelyportfolio/rcdimple")
+
+# load libraries
+library(tidyverse)
+library(rcdimple)
+```
+
+Note that I am loading tidyverse as well because I will be piping my code. 
+
+While going over the multiple features offered in this package, I also want this tutorial to be a bit informative. For that reason, I will be using a few public datasets on education, starting with a [dataset](https://ourworldindata.org/grapher/number-of-out-of-school-children) on the number of out of school children across the world. However, the entire tutorial will not use public education data - I will be creating my own dataframes as well, and will use sales data for some later charts. 
+
+```{r load data, include=FALSE}
+# read in data 
+
+df <- 
+  read.csv('number-of-out-of-school-children.csv')
+
+```
+
+### Interactive Bar Charts
+
+With `rcdimple`, we can easily create interactive bar charts. Let's see how the number of out-of-school female children of primary age has varied over time in Pakistan, which has the world's second-highest number of out-of-school children. 
+
+
+```{r plot1}
+
+# filter data and plot 
+
+df %>% 
+  filter(Entity == "Pakistan") %>% 
+  dimple(x ="Year",
+         y = "Out_of_school_children_of_primary_school_age_female_number",
+         type = "bar") %>%
+  yAxis(title = 'Out-of-school children') %>% 
+  add_title(html = "<h4>Out-of-school children of primary school age, female - Pakistan </h4>")
+
+
+```
+The minimalistic default theme as well as the subtle default colors make the chart quite aesthetically pleasing. The chart is also interactive - you can move your cursor over a bar and it will display a pop-up with the x and y-axis values. It also draws a dashed lined from the bar chart till the y-axis which makes it really easy to determine the exact value. There are a few drawbacks with the default however - the title is not centered, and the size of the x and y-axis titles is a bit small and hard to read. We can easily fix this by adding a center tag in the add_title() function, and by specifying fontSize within xAxis() and yAxis().
+
+```{r plot1 update, fig.align='center'}
+
+# filter data and plot
+
+df %>% 
+  filter(Entity == "Pakistan") %>% 
+  dimple(x ="Year",
+         y = "Out_of_school_children_of_primary_school_age_female_number",
+         type = "bar") %>%
+  xAxis(fontSize = 15,
+        title = "Year") %>%
+  yAxis(title = 'Out-of-school children', fontSize = 15) %>% 
+  add_title(html = "<center> <h4> Out-of-school children of primary school age, female - Pakistan </h4> </center> ")
+
+```
+This is much easier to read than before. A better way to visualize this however may be with a line chart instead.
+
+### Interactive Line Charts
+
+Let's look at the out-of-school male children of primary school age in Ethiopia.
+
+```{r plot2}
+
+# filter and plot
+
+df %>% 
+  filter(Entity == "Ethiopia") %>% 
+  dimple(
+    Out_of_school_children_of_primary_school_age_male_number ~ Year,
+    type = "line"
+  ) %>% 
+  xAxis(fontSize = 13) %>% 
+  yAxis(title = 'Out-of-school children', fontSize = 13) %>% 
+  add_title(html = "<h4> <center> Out-of-school children of primary school age, male - Ethiopia </center> </h4>")
+
+
+```
+
+If you move your cursor over a specific point on the line, it will draw dashed lines to both the x and y-axis. This makes it very easy to quickly determine x and y-axis values. 
+
+
+We can also add multiple lines on the same chart for easy comparison. 
+
+```{r}
+
+# filter and plot
+
+df %>%
+  filter(Year %in% 2002:2015) %>% 
+  subset(Entity %in% c("Pakistan","Ethiopia")) %>%
+  dimple(
+    Out_of_school_children_of_primary_school_age_male_number ~ Year,
+    groups = "Entity",
+    type = "line"
+  ) %>%
+  xAxis(fontSize = 13) %>% 
+  yAxis(title = 'Out-of-school children',
+        fontSize = 13) %>%
+  add_title(html = "<h4> <center> Out-of-school children of primary school age, male - Pakistan vs. Ethiopia </center> </h4>")
+```
+
+One feature that would have been helpful here is for the same point to be highlighted in both the lines instead of just one when you place a cursor over a certain part of the line. We can also see that the legend has been cut off at the top - we can fix that by adding arguments to add_legend(). 
+
+
+```{r}
+
+# filter and plot
+
+df %>%
+  filter(Year %in% 2002:2015) %>% 
+  subset(Entity %in% c("Pakistan","Ethiopia")) %>%
+  dimple(
+    Out_of_school_children_of_primary_school_age_male_number ~ Year,
+    groups = "Entity",
+    type = "line"
+  ) %>%
+  xAxis(fontSize = 13) %>% 
+  yAxis(title = 'Out-of-school children',
+        fontSize = 13) %>%
+  add_title(html = "<h4> <center> Out-of-school children of primary school age, male - Pakistan vs. Ethiopia </center> </h4>") %>% 
+   add_legend(x = 60,
+              y = 10,
+              width = 510,
+              height = 20,
+              horizontalAlign = "right")
+
+```
+
+`rcdimple` also makes it easy to plot line charts side-by-side. Note that I am defining "bounds" in order to control the size of my plot. 
+
+```{r}
+
+# filter and plot
+
+df %>%
+  filter(Year %in% 2002:2015) %>% 
+  subset(Entity %in% c("Pakistan","Ethiopia")) %>%
+  dimple(
+    y = "Out_of_school_children_of_primary_school_age_male_number",
+    x = c("Entity","Year"),
+    bounds = list(x=70,y=50,width=500,height=250),
+    groups = "Entity",
+    type = "line",
+    barGap = 0.05
+  ) %>%
+  xAxis(grouporderRule = "Date", fontSize = 13) %>% 
+  yAxis(title = 'Out-of-school children',
+        fontSize = 13) %>%
+  add_title(html = "<h4> <center> Out-of-school children of primary school age, male - 2002-2015 </center> </h4>")
+  
+
+```
+
+Even though the year is not displayed on the x-axis, we can view the overall trend and can also hover over the lines to see the exact year and the time period.  
+
+If we add more countries, the legend will automatically be updated and all the lines will remain interactive. We can see this by plotting 3 countries that are in the top 10 countries in terms of having the highest number of out-of-school children of primary school age.  
+
+```{r}
+
+# filter and plot
+
+df %>%
+  filter(Year %in% 2004:2015) %>% 
+  subset(Entity %in% c("Pakistan",
+                       "Ethiopia",
+                       "Brazil")) %>%
+  dimple(
+    Total_out_of_school_primary ~ Year,
+    groups = "Entity",
+    type = "line"
+  ) %>%
+  xAxis(fontSize = 13) %>% 
+  yAxis(title = 'Out-of-school children',
+        fontSize = 13) %>%
+  add_title(html = "<h4> <center> Out-of-school children of Primary School Age </center> </h4>") %>% 
+   add_legend(x = 60,
+              y = 10,
+              width = 510,
+              height = 20,
+              horizontalAlign = "right")
+
+```
+
+It's better to have a percentage at the y-axis if we're making comparisons. Let's do this by using a different [dataset](https://ourworldindata.org/grapher/total-government-expenditure-on-education-gdp?country=KOR~CMR~~BGD~USA~GBR) on government spending on education. 
+
+
+```{r data2, include=FALSE}
+
+# load data
+
+df_spending <-
+  read.csv('total-government-expenditure-on-education-gdp.csv')
+
+```
+
+```{r}
+
+# filter and plot
+
+df_spending %>%
+  filter(Year %in% 2010:2015) %>% 
+  subset(Entity %in% c("Pakistan",
+                       "Ethiopia",
+                       "Brazil")) %>%
+  dimple(
+    Government_expenditure_on_education ~ Year,
+    groups = "Entity",
+    type = "line"
+  ) %>%
+  xAxis(fontSize = 13) %>% 
+  yAxis(title = "Percentage of Country's GDP",
+        fontSize = 13) %>%
+  add_title(html = "<h4> <center> Total Government Expenditure on Education 2010-2015 </center> </h4>") %>% 
+   add_legend(x = 60,
+              y = 10,
+              width = 510,
+              height = 20,
+              horizontalAlign = "right")
+
+```
+
+### Grouped Bar Charts
+
+`rcdimple` also allows us to make grouped bar charts, which we can use for comparison within an entity and between entities. The chart below illustrates this - it includes the eight member counties of the South Asian Association for Regional Cooperation (SAARC). 
+
+```{r plot group charts}
+
+# filter and plot
+
+df_spending %>%
+  filter(Year == 2013) %>% 
+  subset(Entity %in% c("Afghanistan",
+                       "Bangladesh",
+                       "Bhutan",
+                       "India",
+                       "Maldives",
+                       "Nepal",
+                       "Pakistan",
+                       "Sri Lanka")) %>%
+  dimple(
+    x = "Entity",
+    y = "Government_expenditure_on_education",
+    groups = "development",
+    type = "bar", width = 600, height = 400) %>%
+  add_legend(x = 60,
+             y = 10,
+             width = 700,
+             height = 100,
+             horizontalAlign = "left") %>% 
+  xAxis(fontSize = 10, title="SAARC Countries") %>% 
+  yAxis(title = "Percentage of Country's GDP",
+        fontSize = 10) %>%
+  add_title(html = "<h4> <center> Total Government Expenditure on Education in SAARC Countries - 2013  </center> </h4>")
+
+```
+
+We can also customize our graphs using color palettes from different packages such as RColorBrewer and latticeExtra or by using various d3 color scales. We can define the colors inside default_colors() as shown in the three graphs below. 
+First, I will customize my graph's colors using a d3 color scale.
+
+```{r}
+
+df_spending %>%
+  filter(Year == 2013) %>% 
+  subset(Entity %in% c("Afghanistan",
+                       "Bangladesh",
+                       "Bhutan",
+                       "India",
+                       "Maldives",
+                       "Nepal",
+                       "Pakistan",
+                       "Sri Lanka")) %>%
+  dimple(
+    x = "Entity",
+    y = "Government_expenditure_on_education",
+    groups = "development",
+    type = "bar", width = 600, height = 400) %>%
+  add_legend(x = 60,
+             y = 10,
+             width = 700,
+             height = 100,
+             horizontalAlign = "left",
+             fontSize = 11) %>% 
+  xAxis(fontSize = 10, title="SAARC Countries") %>% 
+  yAxis(title = "Percentage of Country's GDP",
+        fontSize = 10) %>%
+  add_title(html = "<h4> <center> Total Government Expenditure on Education in SAARC Countries - 2013  </center> </h4>") %>% 
+  default_colors(htmlwidgets::JS('d3.scale.category10()'))
+
+  
+
+```
+
+Next, I will use the R package latticeExtra to obtain the Economist theme. 
+
+```{r}
+
+df_spending %>%
+  filter(Year == 2013) %>% 
+  subset(Entity %in% c("Afghanistan",
+                       "Bangladesh",
+                       "Bhutan",
+                       "India",
+                       "Maldives",
+                       "Nepal",
+                       "Pakistan",
+                       "Sri Lanka")) %>%
+  dimple(
+    x = "Entity",
+    y = "Government_expenditure_on_education",
+    groups = "development",
+    type = "bar", width = 600, height = 400) %>%
+  add_legend(x = 60,
+             y = 10,
+             width = 700,
+             height = 100,
+             horizontalAlign = "left") %>% 
+  xAxis(fontSize = 10, title="SAARC Countries") %>% 
+  yAxis(title = "Percentage of Country's GDP",
+        fontSize = 10) %>%
+  add_title(html = "<h4> <center> Total Government Expenditure on Education in SAARC Countries - 2013  </center> </h4>") %>% 
+  default_colors(latticeExtra::theEconomist.theme()$superpose.line$col)
+
+
+```
+
+Lastly, I will use a colorblind-friendly palette from the package RColorBrewer.
+
+```{r}
+df_spending %>%
+  filter(Year == 2013) %>% 
+  subset(Entity %in% c("Afghanistan",
+                       "Bangladesh",
+                       "Bhutan",
+                       "India",
+                       "Maldives",
+                       "Nepal",
+                       "Pakistan",
+                       "Sri Lanka")) %>%
+  dimple(
+    x = "Entity",
+    y = "Government_expenditure_on_education",
+    groups = "development",
+    type = "bar", width = 600, height = 400) %>%
+  add_legend(x = 60,
+             y = 10,
+             width = 700,
+             height = 100,
+             horizontalAlign = "left") %>% 
+  xAxis(fontSize = 10, title="SAARC Countries") %>% 
+  yAxis(title = "Percentage of Country's GDP",
+        fontSize = 10) %>%
+  add_title(html = "<h4> <center> Total Government Expenditure on Education in SAARC Countries - 2013  </center> </h4>") %>% 
+  default_colors(RColorBrewer::brewer.pal(name = "Dark2", n = 4))
+
+```
+
+
+### Animated Charts
+
+We can also create animated graphs with `rcdimple`. These enable us to encode time and show changes across time. Depending on the graph created, animation can be very useful because it makes transitions easy to understand, and is visually appealing to the viewer as well.
+
+In order to plot an animated graph, I will start by creating my own dataset. To continue with the education theme of this tutorial, I am going to create a dataframe storing the type of school, student race, the percentage of student population of a certain race, and year. Starting off with a simple example, I will define two races - White and Black (I will include more in the next graph). 
+
+
+```{r}
+# create dataframe
+
+year <- c(2000, 2000,
+          2000, 2000,
+          2001, 2001,
+          2001, 2001,
+          2002, 2002,
+          2002, 2002)
+
+race <- c('White','Black',
+          'White','Black',
+          'White','Black',
+          'White','Black',
+          'White','Black',
+          'White','Black')
+
+school_type <- c('Public', 'Public',
+                 'Private', 'Private',
+                 'Public', 'Public',
+                 'Private', 'Private',
+                 'Public', 'Public',
+                 'Private', 'Private')
+
+student_perc <- c(30,70,
+                  40,60,
+                  20,80,
+                  50,50,
+                  15,85,
+                  65,35)
+
+school_data <- data.frame(year, race,
+                          school_type, student_perc)
+
+
+# plot
+
+dimple(
+  student_perc ~ school_type,
+  groups = "race",
+  data = school_data,
+  type = "bar",
+  # storyboard example
+  storyboard = "year",
+) %>%
+  xAxis(type = "addAxis",
+        measure = "student_perc",
+        showPercent = TRUE,
+        title = "School Type",
+        fontSize = 12) %>%
+  yAxis(type = "addPctAxis",
+        title="",
+        fontSize = 12) %>%
+  add_title(html = "<h4> <center> Student Race Distribution by School Type (2000-2002)  </center> </h4>") %>% 
+  add_legend(x = 70,
+              y = 5,
+              width = 410,
+              height = 30,
+              horizontalAlign = "right")
+  
+```
+
+Looking at the interactive graph above, it is very easy to see that from 2000 to 2002, the percentage of White students in the private school and the percentage of Black students in the public school increased. We can move our cursor over the chart and it will display the school type, student race, and the percentage of students of a certain race. The transition between the years is at a fairly decent pace, but there is no option to pause at a certain year. Animation works especially well for this data because there are only a few years, and the data is moving in a general direction e.g. the percentage of White students decreasing in the public school and increasing in the private school. 
+
+As noted above, our race variable is not representative so I will add more races as well as more years to the data. These additions will also help determine whether animation will still be useful.
+
+```{r}
+
+# create dataframe
+
+year <- c(2000, 2000, 2000, 2000,
+          2000, 2000, 2000, 2000,
+          2001, 2001, 2001, 2001,
+          2001, 2001, 2001, 2001,
+          2002, 2002, 2002, 2002,
+          2002, 2002, 2002, 2002,
+          2003, 2003, 2003, 2003,
+          2003, 2003, 2003, 2003,
+          2004, 2004, 2004, 2004,
+          2004, 2004, 2004, 2004)
+
+race <- c('White','Black','Asian','Hispanic',
+          'White','Black','Asian','Hispanic',
+          'White','Black','Asian','Hispanic',
+          'White','Black','Asian','Hispanic',
+          'White','Black','Asian','Hispanic',
+          'White','Black','Asian','Hispanic',
+          'White','Black','Asian','Hispanic',
+          'White','Black','Asian','Hispanic',
+          'White','Black','Asian','Hispanic',
+          'White','Black','Asian','Hispanic')
+
+school_type <-
+  c('Public','Public','Public','Public',
+    'Private','Private','Private','Private',
+    'Public','Public','Public','Public',
+    'Private','Private','Private','Private',
+    'Public','Public','Public','Public',
+    'Private','Private','Private','Private',
+    'Public','Public','Public','Public',
+    'Private','Private','Private','Private',
+    'Public','Public','Public','Public',
+    'Private','Private','Private','Private')
+
+student_perc <- c(20,30,40,10,
+                  20,50,25,5,
+                  17,35,45,3,
+                  15,55,28,2,
+                  18,40,40,2,
+                  12,50,35,3,
+                  15,45,35,5,
+                  10,48,32,10,
+                  20,50,25,5,
+                  12,50,35,3)
+
+school_data_1 <- data.frame(year, race,
+                          school_type, student_perc)
+
+
+# plot
+
+dimple(
+  student_perc ~ school_type,
+  groups = "race",
+  data = school_data_1,
+  type = "bar",
+  # storyboard example
+  storyboard = "year"
+) %>%
+  xAxis(type = "addAxis",
+        measure = "student_perc",
+        showPercent = TRUE,
+        title = "School Type",
+        fontSize = 12) %>%
+  yAxis(type = "addPctAxis",
+        title="",
+        fontSize = 12) %>%
+  add_legend(x = 80,
+              y = 10,
+              width = 530,
+              height = 20,
+              horizontalAlign = "right") %>% 
+  add_title(html = "<h4> <center> Student Race Distribution by School Type (2000-2004)  </center> </h4>")
+```
+
+It is a bit more difficult to comprehend the data when we have a lot of categorical variables. In this case, having 4 different races makes it difficult to track the changes across years, especially for the races that are in the middle of the graph. One has to look at the graph multiple times to understand it completely, so this type of chart is probably not useful when there are a lot of categorical variables, or even a lot of values on the x-axis e.g. having more than one school type in this case. 
+
+### Bubble Matrix
+
+We can also create a bubble matrix with `rcdimple`, which is useful to explore the data. I am going to use a dataset I have created - you can access and download it from [here](https://github.com/maryamkhalidshah/data_visualization_tutorial/blob/main/uni.csv).  
+
+```{r, include=FALSE}
+# load data
+df_uni <- read.csv('uni.csv')
+```
+
+```{r}
+
+# plot
+
+dimple(
+  x = c("Ranking","Type"),
+  y = "Average_fee",
+  z = "Average_faculty_salary",
+  groups = "Type",
+  data = df_uni,
+  type = "bubble"
+) %>%
+  xAxis(fontSize = 12) %>% 
+  yAxis(fontSize = 12,
+        title = 'Average Fee') %>% 
+  add_legend(x = 80,
+             y = 10,
+             width = 530,
+             height = 20,
+             horizontalAlign = "right") %>% 
+  add_title(html = "<h4> <center> Educational Institutions by Average Fee & Ranking </center> </h4>")
+
+```
+
+The bubble chart allows us to separate the x-axis into categories of a certain variable (ranking in this case). At a glance, we can view multiple data items such as the number of ranking tiers, the range of average fee, the difference between the tiers, and even the average faculty salary (depicted by the size of the bubbles). The interactive element is helpful here because in addition to getting an overall idea of the data, we can also move our cursor over the bubbles and get exact figures. 
+
+`rcdimple` offers a suite of plots that we can use to understand our data better. Some plots are not suited to the types of datasets I have been exploring so far. In order to best illustrate the uses of such plots, I am going to deter from education data and move to an entirely different domain - supermarket sales! This is not to say that the following plots cannot be applied to education or similar policy datasets.
+
+```{r}
+
+# obtain data
+
+df_sales <- read.delim(
+  "http://pmsi-alignalytics.github.io/dimple/data/example_data.tsv")
+```
+
+
+### Block Matrix
+
+One very useful plot that we can create, especially for exploratory analysis, is a block matrix.
+
+```{r}
+
+# plot
+
+dimple(
+  x = c("Channel","Price.Tier"),
+  y = "Owner",
+  groups = "Price.Tier",
+  data = df_sales,
+  type = "bar"
+) %>%
+  yAxis(type = "addCategoryAxis",
+        fontSize = 11) %>%
+  xAxis(type = "addCategoryAxis",
+        fontSize = 11) %>%
+  add_legend(x = 80,
+             y = 10,
+             width = 550,
+             height = 20,
+             horizontalAlign = "right") %>% 
+  add_title(html = "<h4> <center> Owner by Channel/Price Tier </center> </h4>")
+  
+```
+Looking at the plot, we can clearly see that both hypermarkets and supermarkets mostly have 'regular' items, and relatively few 'premium' ones. Some owners have all three price tiers, while some only have one.
+
+### Grouped Bar Charts
+
+We can also quickly create grouped bar charts. The interactive element is extremely important here since it is sometimes difficult to determine the exact value of an item looking at a grouped bar chart. The following example is a good illustration of this point:
+
+
+```{r}
+
+# plot 
+
+dimple(
+  x = "Unit.Sales", 
+  y = c("Price.Tier","Channel"),
+  groups = "Owner",
+  data = df_sales,
+  type = "bar"
+) %>%
+  xAxis(type = "addPctAxis",
+        fontSize = 11,
+        title = "Unit Sales") %>%
+  yAxis(type = "addCategoryAxis",
+        fontSize = 10,
+        title = "Price Tier/Channel") %>%
+  add_legend(x = 80,
+             y = 10,
+             width = 700,
+             height = 20,
+             horizontalAlign = "right") %>%
+  add_title( html = " <center> <h3> Sales by Price Tier and Channel </h3> Grouped by Owner </center>")
+```
+
+If we look at the unit sales for Aperture for the premium price tier, it is difficult to assess which bar is bigger. However, we can overcome this drawback by moving our cursor over both bars - we can see that unit sales are 23% for hypermarkets and 21% for supermarkets. Also note the addition of a subtitle in this plot - text outside of the heading tags in add_title() is displayed as the subtitle. 
+
+### Area Charts
+
+We can easily create stacked area charts as well. It should be kept in mind that while area charts can be useful, they are *rarely* a good choice. The following example therefore is just to illustrate how to create a stacked area chart with `rcdimple` in case we find a good use case for them. If you want to learn more about area charts and when they are useful, you may find [this resource](https://www.storytellingwithdata.com/blog/2020/4/9/what-is-an-area-graph) helpful.  
+
+```{r}
+
+# plot
+
+dimple(
+  Unit.Sales ~ Month,
+  groups = "Channel",
+  data = subset(df_sales, Owner %in% c("Aperture","Black Mesa")),
+  type = "area"
+) %>%
+  xAxis(orderRule = "Date",
+        fontSize = 11,
+        title = "Date") %>%
+  yAxis(fontSize = 11) %>% 
+  add_legend(x = 60,
+             y = 10,
+             width = 510,
+             height = 20,
+             horizontalAlign = "right") %>% 
+  add_title(html = '<center> <h4> Unit Sales Over Time </h4> </center>')
+
+```
+
+### Additional Resources
+
+These are only a few of various charts that we can create with `rcdimple`. The biggest advantage is that we can create aesthetically pleasing customizable charts with both interactive and animation elements. There are also many other useful charts that we can create, such as an interactive [waffle chart](https://rpubs.com/walkerke/loksabha_dimple), and [animated population pyramids](https://rpubs.com/walkerke/india_pyramid). For even more examples, check out the charts [here](http://dimplejs.org/).  
+
+
+### References
+
+*rcdimple* - https://rdocumentation.org/packages/rcdimple/versions/0.1
+
+
+$~$
+
+$~$
+
