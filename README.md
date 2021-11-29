@@ -1,3 +1,3 @@
-# data_visualization_tutorial
+# rcdimple Tutorial
 
 Tutorial on the R package `rcdimple`. 
