@@ -1,3 +1,3 @@
-# rcdimple Tutorial
+# `rcdimple` Tutorial
 
 Tutorial on the R package `rcdimple`. 
